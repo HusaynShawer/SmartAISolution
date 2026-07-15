@@ -1,7 +1,7 @@
 services:
-  postgres:
+  db:
     container_name: smartSOL
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER : smartsol
       POSTGRES_PASSWORD : smartpass
