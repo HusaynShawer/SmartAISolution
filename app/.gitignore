@@ -115,7 +115,6 @@ Desktop.ini
 # ==========================================
 # Local AI Models (Optional)
 # ==========================================
-models/
 checkpoints/
 wandb/
 runs/
