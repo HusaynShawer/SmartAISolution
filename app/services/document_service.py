@@ -10,56 +10,76 @@ from rag.splitter import split_text
 from rag.embedder import generate_embeddings
 import logging
 
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {"pdf", "md", "txt"}
 
 class DocumentService:
-    def __init__(self,session:AsyncSession):
-        self.doc_repo = DocumentRepository
+    def __init__(self, session: AsyncSession):
+        self.doc_repo = DocumentRepository(session)
         self.session = session
-        self.emb_repo = EmbeddingRepository
-    
-    async def upload_and_process(self,file:UploadFile,user_id:str)->dict:
+        self.emb_repo = EmbeddingRepository(session)
+
+    async def upload_and_process(self, file: UploadFile, user_id: str) -> dict:
         ext = file.filename.split(".")[-1].lower()
         if ext not in ALLOWED_EXTENSIONS:
-            logger.info("user try to upload non allwoed file")
+            logger.info("User attempted to upload unsupported file type: %s", ext)
             raise HTTPException(
-                status_code=400,detail="UnSpported file"
+                status_code=400, detail="Unsupported file"
             )
-        with tempfile.TemporaryFile(delete=False,suffix=f".{ext}") as temp_file:
+            
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as temp_file:
             content = await file.read()
-            if len(content)>settings.MAX_FILE_SIZE * 1024* 1024:
-                raise HTTPException(status_code=400,detail="File size is very laarge")
-                os.unlink(temp_file)
+            # ensure temporary file is removed before raising an exception
+            if len(content) > settings.MAX_FILE_SIZE * 1024 * 1024:
+                tmp_path_to_delete = temp_file.name
+                temp_file.close()
+                os.unlink(tmp_path_to_delete)
+                raise HTTPException(status_code=400, detail="File size is very large")
+                
             temp_file.write(content)
             tmp_path = temp_file.name
-        logger.info(f"the emp file path {tmp_path}")
-        if ext == "pdf":
-            text=extract_text_from_pdf(tmp_path)
-        elif ext == "md":
-            text = extract_text_from_markdown(tmp_path)
-        elif ext == "txt":
-            text = extract_text_from_txt(tmp_path)
-
-        os.unlink(tmp_path)
+            
+        logger.info(f"Temporary file created at: {tmp_path}")
+        
+        try:
+            logger.info("Starting text extraction for file: %s", file.filename)
+            if ext == "pdf":
+                text = await extract_text_from_pdf(tmp_path)
+            elif ext == "md":
+                text = await extract_text_from_markdown(tmp_path)
+            elif ext == "txt":
+                text = await extract_text_from_txt(tmp_path)
+            logger.info("Text extraction completed for file: %s", file.filename)
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
         
         if not text.strip():
-            logger.info("text arent found")
-            raise HTTPException(status_code=400,detail="no extractable text found")
+            logger.info("No extractable text found in file: %s", file.filename)
+            raise HTTPException(status_code=400, detail="no extractable text found")
         
-        doc = self.doc_repo.create(
+        doc = await self.doc_repo.create(
             user_id=user_id,
             file_name=file.filename,
             content_type=file.content_type or f"text/{ext}",
             size_bytes=len(content)
         )
-        chunks = split_text(doc)
+        
+        chunks = await split_text(text) 
         embeddings = await generate_embeddings(chunks)
 
-        embeddings_data = []
+        if len(chunks) != len(embeddings):
+            logger.error("Mismatch: %d chunks but %d embeddings", len(chunks), len(embeddings))
+            await self.doc_repo.delete(doc.id)
+            await self.session.commit()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to process document: Vector generation mismatch ({len(embeddings)} vectors for {len(chunks)} chunks)."
+            )
 
-        for idx,(chunk,embed) in enumerate(zip(chunks,embeddings)):
+        embeddings_data = []
+        for idx, (chunk, embed) in enumerate(zip(chunks, embeddings)):
             embeddings_data.append({
                 "document_id": doc.id,
                 "chunk_index": idx,
@@ -69,5 +89,5 @@ class DocumentService:
             })
 
         await self.emb_repo.bulk_insert(embeddings_data)
-
-        return {"documnet_id":doc.id, "chunks":len(chunks)}
+        await self.session.commit()
+        logger.info("Document and embeddings stored successfully for document id: %s", doc.id)

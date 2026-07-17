@@ -5,13 +5,13 @@ from services.auth_service import AuthSerivce
 from schemas.auth import UserRegisterRequest, UserLoginRequest
 import logging
 
-logger = logging.Logger(__name__)
-api_router = APIRouter(prefix="/auth",tags=["Auth"])
+logger = logging.getLogger(__name__)
+api_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @api_router.post("/register")
 async def register(request:UserRegisterRequest,db:AsyncSession=Depends(get_db)):
     service = AuthSerivce(db)
-    logger.info(("user register now fuck it "))
+    logger.info(f"Register request received for: {request.email}")
     return await service.register(
         email=request.email,
         password=request.password,

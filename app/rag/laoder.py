@@ -1,22 +1,22 @@
 from pathlib import Path
 import pypdf
 import markdown
+import aiofiles
 
-
-def extract_text_from_pdf(file_path:str)->str:
+async def extract_text_from_pdf(file_path:str)->str:
     text = ""
-    with open(file_path,"rb") as f:
+    async with aiofiles.open(file_path,"rb") as f:
         reader = pypdf.PdfReader(f)
         for page in reader.pages:
             text+= page.extract_text() or ""
     return text
 
-def extract_text_from_markdown(file_path:str)->str:
-    with open(file_path,"r",encoding="utf-8") as f:
-        md_content = f.read()
+async def extract_text_from_markdown(file_path:str)->str:
+    async with aiofiles.open(file_path,"r",encoding="utf-8") as f:
+        md_content = await f.read()
     return markdown.markdown(md_content)
 
-def extract_text_from_txt(file_path:str)->str:
-    with open(file_path,"r") as f:
-        txt = f.read()
+async def extract_text_from_txt(file_path:str)->str:
+    async with aiofiles.open(file_path,"r",encoding="utf-8") as f:
+        txt = await f.read()
     return txt

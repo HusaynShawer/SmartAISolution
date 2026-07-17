@@ -5,7 +5,7 @@ from models.message import Message
 from sqlalchemy import select,desc
 import logging
 
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 class ConversationRepository:
     def __init__(self,sesion:AsyncSession):
@@ -33,15 +33,15 @@ class ConversationRepository:
     
     async def update_title(self,title:str, conv_id:str)->None:
         conv = self.get_conv_by_id(conv_id=conv_id)
-        if not conv or conv is None:
-            logger.info("have no conversation")
+        if not conv:
+            logger.info("Conversation not found for id: %s", conv_id)
         conv.title = title
         self.session.commit()
         
     async def delete_conv(self,conv_id:str)-> None:
         conv = self.get_conv_by_id(conv_id=conv_id)
-        if not conv or conv is None:
-            logger.info("have no conversation")
+        if not conv:
+            logger.info("Conversation not found for id: %s", conv_id)
         await self.session.delete(conv)
         await self.session.commit()
         
