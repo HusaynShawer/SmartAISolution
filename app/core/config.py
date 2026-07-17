@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     CHUNK_SIZE:int
     CHUNK_OVERLAB:int
     MAX_FILE_SIZE:int
+    COHERE_API_KEY:str
+    EMBEDDING_MODEL:str
 
     #APP
     LOG_LEVEL:str

@@ -5,7 +5,7 @@ from database.base import Base
 from database.session import engine
 from core.logging_config import setup_logging
 from contextlib import asynccontextmanager
-from routers import auth
+from routers import auth, document
 #SETUP LOGGER
 setup_logging()
 
@@ -32,6 +32,7 @@ app.add_middleware(
 
 
 app.include_router(auth.api_router)
+app.include_router(document.router)
 
 @app.get("/health",tags=["Health"])
 async def cheak_health():

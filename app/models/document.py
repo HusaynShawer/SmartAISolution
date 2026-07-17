@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.base import Base
+from .embedding import Embedding
 
 class Document(Base):
     __tablename__ = "documents"
@@ -18,4 +19,8 @@ class Document(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    #embeddings = relationship("Embedding", back_populates="document")
+    embeddings: Mapped[list["Embedding"]] = relationship(
+        "Embedding", 
+        back_populates="document",
+        cascade="all, delete-orphan"
+    )

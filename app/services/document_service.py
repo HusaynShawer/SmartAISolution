@@ -2,19 +2,19 @@ import os
 import tempfile
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.config import settings
-from app.repositories.document_repo import DocumentRepository
+from core.config import settings
+from repositories.document_repo import DocumentRepository
 from repositories.embedding_repo import EmbeddingRepository
 from rag.laoder import extract_text_from_pdf, extract_text_from_markdown, extract_text_from_txt
-from app.rag.splitter import split_text
-from app.rag.embedder import generate_embeddings
+from rag.splitter import split_text
+from rag.embedder import generate_embeddings
 import logging
 
 logger = logging.Logger(__name__)
 
 ALLOWED_EXTENSIONS = {"pdf", "md", "txt"}
 
-class Document_service:
+class DocumentService:
     def __init__(self,session:AsyncSession):
         self.doc_repo = DocumentRepository
         self.session = session

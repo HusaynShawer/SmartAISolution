@@ -7,7 +7,7 @@ class UserRegisterRequest(BaseModel):
     
 class UserLoginRequest(BaseModel):
     email:EmailStr
-    passwrod:str
+    password:str
     
 class TokenResponse(BaseModel):
     access_token:str
