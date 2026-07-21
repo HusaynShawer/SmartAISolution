@@ -1,7 +1,7 @@
 from langchain_core.tools import StructuredTool
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.ticket_service import TicketService
-from app.schemas.ticket import TicketUpdateRequest
+from services.ticket_service import TicketService
+from schemas.ticket import TicketUpdateRequest
 
 def get_escalate_tool(session: AsyncSession, user_id: str):
     async def wrapper(ticket_id: str, reason: str) -> str:

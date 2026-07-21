@@ -57,9 +57,9 @@ async def get_current_user(
     
     try:
         payload = jwt.decode(
-            token, 
-            settings.JWT_SERCERT, 
-            algorithms=[settings.JWT_ALGORTHIM]
+            token,
+            settings.JWT_SECRET,
+            algorithms=[settings.JWT_ALGORITHM]
         )
     except JWTError:
         logger.warning("INVALID ACCESS TOKEN FROM DEPENDENCIES")

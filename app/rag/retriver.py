@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from repositories.embedding_repo import EmbeddingRepository
-from app.rag.embedder import generate_embeddings
+from rag.embedder import generate_embeddings
 
 async def retrieve_relevent_chunks(
         query:str,

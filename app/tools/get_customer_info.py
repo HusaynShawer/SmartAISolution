@@ -1,6 +1,6 @@
 from langchain_core.tools import StructuredTool
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.user_repo import UserRepository
+from repositories.user_repo import UserRepository
 
 async def get_customer_info_func(user_id:str, session:AsyncSession)->dict:
     user_repo = UserRepository(session)
