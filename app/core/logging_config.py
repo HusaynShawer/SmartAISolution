@@ -2,9 +2,13 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 from core.config import settings
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+LOG_DIR = BASE_DIR / "logs"
 
 def setup_logging():
-    os.makedirs("logs",exist_ok=True)
+    LOG_DIR.mkdir(parents=True,exist_ok=True)
     logging.basicConfig(
         level=getattr(
             logging,settings.LOG_LEVEL.upper(),logging.INFO),
@@ -12,7 +16,7 @@ def setup_logging():
             handlers=[
                 logging.StreamHandler(),
                 RotatingFileHandler(
-                    "logs/app.log",
+                    LOG_DIR / "app.log",
                     maxBytes=5*1024*1024,
                     backupCount=5,
                     encoding="utf-8"
