@@ -38,7 +38,7 @@ async def ticket_agent_node(state: AgentState, session: AsyncSession) -> dict:
             SystemMessage(content=TICKET_AGENT_PROMPT),
             SystemMessage(content="ALWAYS confirm actions with the user before creating/updating tickets."),
         ]
-        for msg in messages[-5:]:
+        for msg in messages[-10:]:
             if isinstance(msg, (HumanMessage, AIMessage)):
                 full_messages.append(msg)
         
