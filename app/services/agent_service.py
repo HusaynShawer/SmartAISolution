@@ -2,7 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.graph import SupportAgentGraph
 from memory.memory_manger import MemoryManager
 from app.repositories.conversation_repo import ConversationRepository
-
+import logging
+logger = logging.getLogger(__name__)
 class AgentService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -15,7 +16,7 @@ class AgentService:
             conv = await self.conv_repo.create(user_id, title=message[:50])
             conversation_id = conv.id
         else:
-            conv = await self.conv_repo.get_by_id(conversation_id)
+            conv = await self.conv_repo.get_conv_by_id(conversation_id)
             if not conv or conv.user_id != user_id:
                 conv = await self.conv_repo.create(user_id)
                 conversation_id = conv.id
@@ -40,7 +41,8 @@ class AgentService:
 
         # Save assistant response
         await self.memory.add_assistant_message(conversation_id, agent_response)
-
+        logger.info(f"user message: {message}")
+        logger.info(f"Agent response: {agent_response}")
         return {
             "conversation_id": conversation_id,
             "response": agent_response,
