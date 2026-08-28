@@ -21,7 +21,7 @@ async def sql_agent_node(state: AgentState, session: AsyncSession) -> dict:
         
         tools = [
             get_customer_info_tool(session),
-            get_search_tickets_tool(session, user_id),
+            get_search_ticket_tool(session, user_id),
         ]
         llm_with_tools = llm.bind_tools(tools)
         
@@ -54,7 +54,7 @@ async def sql_agent_node(state: AgentState, session: AsyncSession) -> dict:
                 if tool_name == "get_customer_information":
                     result = await get_customer_info_tool(session).ainvoke({"user_id": user_id})
                 elif tool_name == "search_previous_tickets":
-                    result = await get_search_tickets_tool(session, user_id).ainvoke(tool_call.get("args", {}))
+                    result = await get_search_ticket_tool(session, user_id).ainvoke(tool_call.get("args", {}))
                 else:
                     result = f"Unknown tool: {tool_name}"
                 
