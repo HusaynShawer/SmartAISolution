@@ -106,7 +106,6 @@ class SupportAgentGraph:
 
     async def run_stream(self, user_message: str, conversation_messages: list):
         """Yield tokens from the final assistant response."""
-        # Build initial state
         initial_messages = list(conversation_messages)
         initial_messages.append(HumanMessage(content=user_message))
         
@@ -121,9 +120,6 @@ class SupportAgentGraph:
             "escalation_needed": False,
         }
         
-        # Run the graph step by step until we get the final answer
-        # Instead of ainvoke (which waits for full completion), we use astream_events
-        # to capture tokens from the LLM calls.
         async for event in self.graph.astream_events(initial_state, version="v2"):
             kind = event["event"]
             if kind == "on_chat_model_stream":
