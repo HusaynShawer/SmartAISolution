@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_MIN: int = 60
 
     # OpenRouter Configuration
-    OPENROUTER_API_KEY: str  # Your OpenRouter API key (sk-or-v1-...)
+    OPENROUTER_API_KEY: str
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_MODEL: str = "deepseek/deepseek-chat"  # OpenRouter format
 
