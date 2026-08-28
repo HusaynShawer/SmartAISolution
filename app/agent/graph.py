@@ -104,9 +104,42 @@ class SupportAgentGraph:
 
         return workflow.compile()
 
-    async def run(self, user_message: str, conversation_messages: list) -> str:
+    async def run_stream(self, user_message: str, conversation_messages: list):
+        """Yield tokens from the final assistant response."""
+        # Build initial state
+        initial_messages = list(conversation_messages)
+        initial_messages.append(HumanMessage(content=user_message))
+        
         initial_state: AgentState = {
-            "messages": conversation_messages + [HumanMessage(content=user_message)],
+            "messages": initial_messages,
+            "user_id": self.user_id,
+            "conversation_id": "",
+            "intent": "",
+            "tool_outputs": {},
+            "final_response": None,
+            "error": None,
+            "escalation_needed": False,
+        }
+        
+        # Run the graph step by step until we get the final answer
+        # Instead of ainvoke (which waits for full completion), we use astream_events
+        # to capture tokens from the LLM calls.
+        async for event in self.graph.astream_events(initial_state, version="v2"):
+            kind = event["event"]
+            if kind == "on_chat_model_stream":
+                content = event["data"]["chunk"].content
+                if content:
+                    yield content
+
+
+    async def run(self, user_message: str, conversation_messages: list) -> str:
+        """Run the agent graph and return the final assistant response."""
+
+        initial_messages = list(conversation_messages)
+        initial_messages.append(HumanMessage(content=user_message))
+
+        initial_state: AgentState = {
+            "messages": initial_messages,
             "user_id": self.user_id,
             "conversation_id": "",
             "intent": "",
