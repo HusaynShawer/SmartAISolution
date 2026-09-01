@@ -28,14 +28,13 @@ wheels/
 aienv/
 env/
 ENV/
-aienv
-/aienv
 # ==========================================
 # Environment Variables
 # ==========================================
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # ==========================================
 # IDE
@@ -120,3 +119,11 @@ models/
 checkpoints/
 wandb/
 runs/
+
+# ==========================================
+# Frontend
+# ==========================================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo

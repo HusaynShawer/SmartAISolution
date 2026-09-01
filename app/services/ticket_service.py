@@ -1,20 +1,27 @@
 import logging
-from fastapi import HTTPException
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from repositories.ticket_repo import TicketRepository
 from schemas.ticket import (
-    TicketCreateRequest, TicketUpdateRequest, TicketResponse,
-    TicketUpdateResponse, TicketListResponse,
+    TicketCreateRequest,
+    TicketListResponse,
+    TicketResponse,
+    TicketUpdateRequest,
+    TicketUpdateResponse,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class TicketService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.ticket_repo = TicketRepository(session)
 
-    async def create_ticket(self, user_id: str, request: TicketCreateRequest) -> TicketResponse:
+    async def create_ticket(
+        self, user_id: str, request: TicketCreateRequest
+    ) -> TicketResponse:
         logger.info("User %s creating ticket with subject: %s", user_id, request.subject)
         ticket = await self.ticket_repo.create(
             user_id=user_id,
@@ -24,44 +31,66 @@ class TicketService:
         )
         logger.info("Ticket %s created successfully for user %s", ticket.id, user_id)
 
-        self.ticket_repo.add_update(
+        await self.ticket_repo.add_update(
             ticket_id=ticket.id,
             content=f"Ticket created with priority {ticket.priority}",
             created_by=user_id,
         )
         return await self._to_response(ticket)
 
-    async def get_ticket(self, ticket_id: str, user_id) -> TicketListResponse:
+    async def get_ticket(self, ticket_id: str, user_id: str) -> TicketResponse:
         logger.info("User %s fetching ticket %s", user_id, ticket_id)
         ticket = await self.ticket_repo.get_ticket_by_id(ticket_id)
         if not ticket or ticket.user_id != user_id:
-            logger.warning("Ticket %s not found or unauthorized access by user %s", ticket_id, user_id)
-            raise HTTPException(status_code=400, detail="Ticket not found")
+            logger.warning(
+                "Ticket %s not found or unauthorized access by user %s",
+                ticket_id, user_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found"
+            )
 
         return await self._to_response(ticket)
 
-    async def get_ticket_list(self, user_id, skip: int = 0, limit: int = 10,
-                               status: str | None = None) -> list[TicketListResponse]:
-        logger.info("User %s fetching ticket list | skip=%s limit=%s status=%s", user_id, skip, limit, status)
+    async def get_ticket_list(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 10,
+        status_filter: str | None = None,
+    ) -> TicketListResponse:
+        logger.info(
+            "User %s fetching ticket list | skip=%s limit=%s status=%s",
+            user_id, skip, limit, status_filter,
+        )
         tickets, total = await self.ticket_repo.get_ticket_list_by_id(
             user_id=user_id,
             skip=skip,
             limit=limit,
-            status=status,
+            status=status_filter,
         )
         logger.info("Found %s tickets for user %s", total, user_id)
 
         ticket_response = [await self._to_response(t) for t in tickets]
-        return TicketListResponse(tickets=ticket_response, total=total, skip=skip, limit=limit)
+        return TicketListResponse(
+            tickets=ticket_response, total=total, skip=skip, limit=limit
+        )
 
-    async def update_ticket(self, user_id: str, ticket_id: str, request: TicketUpdateRequest) -> TicketResponse:
+    async def update_ticket(
+        self, ticket_id: str, user_id: str, request: TicketUpdateRequest
+    ) -> TicketResponse:
         logger.info("User %s updating ticket %s", user_id, ticket_id)
         ticket = await self.ticket_repo.get_ticket_by_id(ticket_id=ticket_id)
         if not ticket or ticket.user_id != user_id:
-            logger.warning("Ticket %s not found or unauthorized update attempt by user %s", ticket_id, user_id)
-            raise HTTPException(status_code=400, detail="Ticket not found")
+            logger.warning(
+                "Ticket %s not found or unauthorized update attempt by user %s",
+                ticket_id, user_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found"
+            )
 
-        updates = {}
+        updates: dict = {}
         if request.status:
             updates["status"] = request.status
         if request.priority:
@@ -83,7 +112,6 @@ class TicketService:
         return await self._to_response(ticket)
 
     async def _to_response(self, ticket) -> TicketResponse:
-        logger.debug("Building response for ticket %s", ticket.id)
         updates = await self.ticket_repo.get_updates(ticket.id)
         return TicketResponse(
             id=ticket.id,

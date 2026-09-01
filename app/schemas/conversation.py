@@ -1,23 +1,26 @@
-from pydantic import BaseModel
 from datetime import datetime
-from typing import List
+
+from pydantic import BaseModel
+
 
 class MessageResponse(BaseModel):
-    id:str
-    role:str
-    content:str
-    created_at:datetime
-    
-    model_config= {"from_attributes":True}
-    
-class Conversationresponse(BaseModel):
-    id:str
-    title:str
-    status:str
-    created_at:datetime
-    updated_at:datetime
+    id: str
+    role: str
+    content: str
+    created_at: datetime
 
-    model_config= {"from_attributes":True}
-    
-class CnoversationDetailRespone(Conversationresponse):
-    messages:List[MessageResponse] = []
+    model_config = {"from_attributes": True}
+
+
+class ConversationResponse(BaseModel):
+    id: str
+    title: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ConversationDetailResponse(ConversationResponse):
+    messages: list[MessageResponse] = []

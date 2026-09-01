@@ -1,0 +1,45 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: smartSOL-db
+    environment:
+      POSTGRES_USER: smartsol
+      POSTGRES_PASSWORD: smartpass
+      POSTGRES_DB: smartdb
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartsol -d smartdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+    container_name: smartSOL-app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://smartsol:smartpass@db:5432/smartdb
+      JWT_SECRET: ${JWT_SECRET:-change_me_to_a_strong_random_string}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:?set EMBEDDING_API_KEY in .env}
+      LLM_MODEL: ${LLM_MODEL:-deepseek/deepseek-chat}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      OPENROUTER_HTTP_REFERER: ${OPENROUTER_HTTP_REFERER:-http://localhost:8000}
+      OPENROUTER_APP_NAME: ${OPENROUTER_APP_NAME:-AI-Support-Agent}
+      CORS_ORIGINS: "${CORS_ORIGINS:-[\"http://localhost:3000\",\"http://localhost:8000\"]}"
+      DEFAULT_RATE_LIMIT: ${DEFAULT_RATE_LIMIT:-20/minute}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-120}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

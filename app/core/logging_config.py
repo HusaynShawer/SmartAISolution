@@ -1,8 +1,8 @@
 import logging
-import os
 from logging.handlers import RotatingFileHandler
-from core.config import settings
 from pathlib import Path
+
+from core.config import settings
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 LOG_DIR = BASE_DIR / "logs"

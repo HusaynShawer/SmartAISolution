@@ -1,0 +1,29 @@
+# Python
+aienv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+logs/
+
+# Secrets
+.env
+app/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Docker
+*.pem
+docker-compose.override.yml
+
+# Misc
+.idea/
+.vscode/
+*.log
+.DS_Store
+.git/
+.github/

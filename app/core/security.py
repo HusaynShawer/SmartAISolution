@@ -1,26 +1,33 @@
-from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
+from datetime import UTC, datetime, timedelta
+
+from jose import JWTError, jwt
 from passlib.context import CryptContext
+
 from core.config import settings
 
-pwd_context = CryptContext(schemes=['bcrypt'],deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def hash_password(password:str) -> str:
+
+def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-def verfiy_password(plain_password:str,hash_password:str)-> bool:
-    return pwd_context.verify(plain_password,hash_password)
 
-def create_access_token(data:dict)->str:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRATION_MIN)
-    to_encode.update({"exp":expire})
+    expire = datetime.now(UTC) + timedelta(minutes=settings.JWT_EXPIRATION_MIN)
+    to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
 
-def decode_access_token(token:str)->dict:
+def decode_access_token(token: str) -> dict | None:
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+        )
         return payload
     except JWTError:
         return None

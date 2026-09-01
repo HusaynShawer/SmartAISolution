@@ -1,27 +1,45 @@
 from langchain_core.tools import StructuredTool
-from repositories.ticket_repo import TicketRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
-async def search_ticket_func(query:str, user_id,session:AsyncSession)->list[dict]:
+from repositories.ticket_repo import TicketRepository
+
+
+async def search_ticket_func(
+    query: str, user_id: str, session: AsyncSession
+) -> list[dict]:
     ticket_repo = TicketRepository(session=session)
-    ticket = ticket_repo.search_similar(query_text=query)
+    tickets = await ticket_repo.search_similar(query_text=query)
     return [
         {
-            "id":t.id,"subject":t.subject,"priority":t.priority
-        } for t in ticket if t.user_id == user_id
+            "id": ticket.id,
+            "subject": ticket.subject,
+            "status": ticket.status,
+            "priority": ticket.priority,
+        }
+        for ticket in tickets
+        if ticket.user_id == user_id
     ]
 
-def get_search_ticket_tool(session:AsyncSession):
-    async def wrapper(query:str,user_id:str,session)->str:
-        
-        results = await search_ticket_func(query=query,user_id=user_id,session=session)
+
+def get_search_ticket_tool(
+    session: AsyncSession, user_id: str
+) -> StructuredTool:
+    async def wrapper(query: str) -> str:
+        results = await search_ticket_func(
+            query=query, user_id=user_id, session=session
+        )
         if not results:
             return "No matching tickets found."
-        return "\n".join([f"{t['subject']} (status: {t['status']})" for t in results])
-    
+        return "\n".join(
+            [f"{t['subject']} (status: {t['status']})" for t in results]
+        )
+
     return StructuredTool.from_function(
         name="search_previous_tickets",
-        description="Search previous support tickets for similar issues. Input: query string.",
+        description=(
+            "Search previous support tickets for similar issues. "
+            "Input: search query string."
+        ),
         func=wrapper,
         coroutine=wrapper,
     )
