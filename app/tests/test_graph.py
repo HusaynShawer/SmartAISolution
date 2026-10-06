@@ -158,3 +158,85 @@ async def test_run_stream_yields_nothing_when_final_node_errors():
 
     assert tokens == []
     assert usage["total_tokens"] == 0
+
+
+def test_is_affirmative_matches_confirmations():
+    from agent.ticket_agent import _is_affirmative
+
+    for text in ["ok", "Ok", "yes", "Yes", "Proceed", "confirm", "sure", "go ahead"]:
+        assert _is_affirmative(text), text
+    for text in ["no", "maybe", "I still can't log in"]:
+        assert not _is_affirmative(text), text
+
+
+def test_extract_ticket_details_plain_summary():
+    from agent.ticket_agent import _extract_ticket_details
+
+    summary = (
+        "Subject: Login Issue\n"
+        "Description: I cannot log in with correct credentials\n"
+        "Priority: high"
+    )
+    assert _extract_ticket_details(summary) == {
+        "subject": "Login Issue",
+        "description": "I cannot log in with correct credentials",
+        "priority": "high",
+    }
+
+
+def test_extract_ticket_details_markdown_summary():
+    from agent.ticket_agent import _extract_ticket_details
+
+    summary = (
+        "Here is a summary of the ticket I will create for you:\n"
+        "- **Subject**: Login Issue - Unable to access account\n"
+        "- **Description**: I am unable to log in even with the correct email and password.\n"
+        "- **Priority**: High"
+    )
+    details = _extract_ticket_details(summary)
+    assert details is not None
+    assert details["subject"] == "Login Issue - Unable to access account"
+    assert details["priority"] == "high"
+    assert "unable to log in" in details["description"]
+
+
+def test_confirmed_pending_ticket_after_ok():
+    from agent.ticket_agent import _confirmed_pending_ticket
+
+    messages = [
+        HumanMessage(content="create a support ticket for my login issue"),
+        AIMessage(
+            content=(
+                "Here is a summary of the ticket I will create for you:\n"
+                "Subject: Login Issue\n"
+                "Description: cannot log in with correct credentials\n"
+                "Priority: high\n"
+                "Please confirm."
+            )
+        ),
+        HumanMessage(content="ok"),
+    ]
+    details = _confirmed_pending_ticket(messages)
+    assert details is not None
+    assert details["subject"] == "Login Issue"
+    assert details["priority"] == "high"
+
+
+def test_confirmed_pending_ticket_ignores_unconfirmed_request():
+    from agent.ticket_agent import _confirmed_pending_ticket
+
+    messages = [
+        HumanMessage(content="ok create support ticket"),
+    ]
+    assert _confirmed_pending_ticket(messages) is None
+
+
+def test_confirmed_pending_ticket_ignores_rejection():
+    from agent.ticket_agent import _confirmed_pending_ticket
+
+    messages = [
+        HumanMessage(content="create a support ticket"),
+        AIMessage(content="Subject: X, Description: Y, Priority: high. Confirm?"),
+        HumanMessage(content="no"),
+    ]
+    assert _confirmed_pending_ticket(messages) is None
