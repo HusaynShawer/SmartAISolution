@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -10,13 +11,18 @@ from alembic import context
 # this is the Alembic Config object
 config = context.config
 
+
+def get_db_url() -> str:
+    """Prefer the DATABASE_URL env var (used in Docker), fall back to alembic.ini."""
+    return os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url") or ""
+
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here for 'autogenerate' support
+import models  # noqa: F401  (ensures all models are registered on Base.metadata)
 from database.base import Base
-from models import *  # noqa: ensure all models are imported
 
 target_metadata = Base.metadata
 
@@ -27,7 +33,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_db_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -50,8 +56,9 @@ async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+    configuration = config.get_section(config.config_ini_section) or {}
+    db_url = get_db_url()
+    configuration["sqlalchemy.url"] = db_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",

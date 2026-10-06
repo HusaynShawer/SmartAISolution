@@ -1,9 +1,11 @@
 # ticket_repo.py
 import logging
+
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.ticket_update import TicketUpdate
+
 from models.ticket import Ticket
-from sqlalchemy import select, desc, func
+from models.ticket_update import TicketUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ class TicketRepository:
     async def get_ticket_list_by_id(
             self, user_id: str, limit: int = 10, skip: int = 0,
             status: str | None = None
-    ) -> list[Ticket]:
+    ) -> tuple[list[Ticket], int]:
         logger.info("Fetching tickets for user %s | skip=%s limit=%s status=%s", user_id, skip, limit, status)
         cond = [Ticket.user_id == user_id]
         if status:
@@ -46,7 +48,7 @@ class TicketRepository:
 
         query_count = select(func.count()).select_from(Ticket).where(*cond)
         total_result = await self.session.execute(query_count)
-        total = total_result.scalar()
+        total = total_result.scalar() or 0
 
         query = (
             select(Ticket).where(*cond)  

@@ -1,7 +1,9 @@
 from langchain_core.tools import StructuredTool
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.ticket_service import TicketService
+
 from schemas.ticket import TicketCreateRequest
+from services.ticket_service import TicketService
+
 
 def get_create_ticket_tool(session: AsyncSession, user_id: str):
     async def wrapper(subject: str, description: str, priority: str = "medium") -> str:

@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     )
     JWT_EXPIRATION_MIN: int = 60
 
+    # CORS
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
     # OpenRouter Configuration
     OPENROUTER_API_KEY: str
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
@@ -37,7 +44,14 @@ class Settings(BaseSettings):
     # RAG
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
-    MAX_FILE_SIZE: int = 10
+    MAX_FILE_SIZE: int = 10  # MB
+
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+    DEFAULT_RATE_LIMIT: str = "20/minute"
+
+    # Request Timeout (seconds)
+    REQUEST_TIMEOUT_SECONDS: float = 120.0
 
     # App
     LOG_LEVEL: str = "INFO"

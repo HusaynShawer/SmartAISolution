@@ -5,3 +5,4 @@ from .document import Document
 from .embedding import Embedding
 from .ticket import Ticket
 from .ticket_update import TicketUpdate
+from .token_usage import TokenUsage
